@@ -1,0 +1,150 @@
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <locale.h>
+
+double factorial(int n) {
+    double res = 1;
+    for (int i = 1; i <= n; i++) {
+        res *= i;
+    }
+    return res;
+}
+
+double taylor_sin(double x, int n) {
+    double res = 0;
+    for (int i = 0; i < n; i++) {
+        res += pow(-1, i) * pow(x, 2 * i + 1) / factorial(2 * i + 1);
+    }
+    return res;
+}
+
+double taylor_cos(double x, int n) {
+    double res = 0;
+    for (int i = 0; i < n; i++) {
+        res += pow(-1, i) * pow(x, 2 * i) / factorial(2 * i);
+    }
+    return res;
+}
+
+double taylor_exp(double x, int n) {
+    double res = 0;
+    for (int i = 0; i < n; i++) {
+        res += pow(x, i) / factorial(i);
+    }
+    return res;
+}
+
+double taylor_ln(double x, int n) {
+    if (x <= 0) {
+        printf("Логарифм определен только для x > 0.\n");
+        exit(1);
+    }
+    double result = 0;
+    for (int i = 1; i <= n; i++) {
+        result += pow(-1, i + 1) * pow(x - 1, i) / i;
+    }
+    return result;
+}
+
+int main() {
+    setlocale(LC_ALL, "Rus");
+    int mode, func_choice, n, n_max;
+    double x, accuracy, res, expected_res, diff, prev_res;
+
+    printf("Выберите режим работы:\n1. Однократный расчет\n2. Серийный эксперимент\n");
+    scanf_s("%d", &mode);
+    printf("Выберите функцию:\n1. sin(x)\n2. cos(x)\n3. exp(x)\n4. ln(x)\n");
+    scanf_s("%d", &func_choice);
+    printf("Введите значение x: ");
+    scanf_s("%lf", &x);
+
+    if (mode == 1) {
+        printf("Введите точность вычисления (например, 0,000001 (ввод с запятыми)): ");
+        scanf_s("%lf", &accuracy);
+        printf("Введите максимальное количество слагаемых (1-1000): ");
+        scanf_s("%d", &n_max);
+        if (n_max < 1 || n_max > 1000) {
+            printf("Неверное количество слагаемых.\n");
+            return 1;
+        }
+        n = 0;
+        res = 0;
+        do {
+            n++;
+            prev_res = res;
+            switch (func_choice) {
+            case 1: res = taylor_sin(x, n); break;
+            case 2: res = taylor_cos(x, n); break;
+            case 3: res = taylor_exp(x, n); break;
+            case 4: res = taylor_ln(x, n); break;
+            }
+            diff = fabs(res - prev_res);
+            if (n >= n_max) {
+                printf("Достигнуто максимальное количество слагаемых (%d), точность %.10lf не достигнута.\n", n_max, accuracy);
+                break;
+            }
+        } while (diff > accuracy);
+
+        switch (func_choice) {
+        case 1: expected_res = sin(x); break;
+        case 2: expected_res = cos(x); break;
+        case 3: expected_res = exp(x); break;
+        case 4: expected_res = log(x); break;
+        }
+        diff = fabs(res - expected_res);
+        printf("Эталонное значение: %lf\n", expected_res);
+        printf("Вычисленное значение: %lf\n", res);
+        printf("Разница с эталоном: %lf\n", diff);
+        printf("Количество слагаемых: %d\n", n);
+
+    }
+    else if (mode == 2) {
+        printf("Введите точность вычисления (например, 0.000001): ");
+        scanf_s("%lf", &accuracy);
+        printf("Введите количество экспериментов (1-25): ");
+        scanf_s("%d", &n_max);
+        if (n_max < 1 || n_max > 25) {
+            printf("Неверное количество экспериментов.\n");
+            return 1;
+        }
+
+        switch (func_choice) {
+        case 1: expected_res = sin(x); break;
+        case 2: expected_res = cos(x); break;
+        case 3: expected_res = exp(x); break;
+        case 4: expected_res = log(x); break;
+        default: printf("Неверный выбор функции.\n"); return 1;
+        }
+
+        printf("Эталонное значение: %lf\n", expected_res);
+        printf("Кол-во слагаемых\tВычисленное значение\tРазница\n");
+
+        for (int i = 1; i <= n_max; i++) {
+            n = 0;
+            res = 0;
+            do {
+                n++;
+                prev_res = res;
+                switch (func_choice) {
+                case 1: res = taylor_sin(x, n); break;
+                case 2: res = taylor_cos(x, n); break;
+                case 3: res = taylor_exp(x, n); break;
+                case 4: res = taylor_ln(x, n); break;
+                }
+                diff = fabs(res- prev_res);
+                if (n >= i) {
+                    if (diff > accuracy)
+                        printf("Достигнуто максимальное количество слагаемых (%d), точность %.10lf не достигнута для %d слагаемых.\n", i, accuracy, i);
+                    break;
+                }
+            } while (diff > accuracy);
+            diff = fabs(res - expected_res);
+            printf("%d\t\t%lf\t\t%lf\n", i, res, diff);
+        }
+    } else {
+        printf("Неверный режим работы.\n");
+        return 1;
+    }
+    return 0;
+}
